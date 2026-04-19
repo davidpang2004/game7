@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Chat Pals</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);min-height:100vh;display:flex;justify-content:center;align-items:flex-start;padding:1rem;}
+#root{width:100%;max-width:480px;}
+.screen{background:#fff;border-radius:24px;padding:24px;margin-top:8px;box-shadow:0 8px 32px rgba(0,0,0,0.18);}
+.title{text-align:center;margin-bottom:20px;}
+.title h1{font-size:32px;font-weight:800;color:#5b21b6;}
+.title p{font-size:14px;color:#888;margin-top:4px;}
+.stars{font-size:22px;letter-spacing:4px;margin-bottom:4px;}
+.section-label{font-size:13px;font-weight:700;color:#7c3aed;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;}
+.name-input{width:100%;padding:12px 14px;font-size:16px;border:2px solid #e0d7f7;border-radius:14px;outline:none;color:#222;margin-bottom:16px;}
+.name-input:focus{border-color:#7c3aed;}
+.age-grid,.char-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px;}
+.age-btn,.char-btn{padding:12px 6px;border-radius:14px;border:2px solid #e0d7f7;background:#faf7ff;cursor:pointer;text-align:center;font-family:inherit;transition:all .15s;}
+.age-btn.sel,.char-btn.sel{border-color:#7c3aed;background:#ede9fe;}
+.age-btn .emoji,.char-btn .face{font-size:24px;display:block;margin-bottom:4px;}
+.age-btn .lbl,.char-btn .cname{font-size:12px;font-weight:700;color:#5b21b6;}
+.age-btn .sub,.char-btn .cdesc{font-size:10px;color:#888;margin-top:2px;}
+.start-btn{width:100%;padding:14px;font-size:17px;font-weight:700;color:#fff;border:none;border-radius:16px;cursor:pointer;}
+.chat-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
+.char-face-sm{font-size:32px;background:#ede9fe;border-radius:50%;width:46px;height:46px;display:flex;align-items:center;justify-content:center;}
+.char-name{font-size:14px;font-weight:700;color:#5b21b6;}
+.mission-lbl{font-size:11px;color:#888;}
+.progress-bar{height:6px;background:#e0d7f7;border-radius:99px;margin-bottom:14px;overflow:hidden;}
+.progress-fill{height:100%;background:linear-gradient(90deg,#7c3aed,#a855f7);border-radius:99px;transition:width .4s;}
+.chat-area{min-height:160px;margin-bottom:14px;}
+.bubble-wrap{display:flex;align-items:flex-end;gap:8px;margin-bottom:12px;animation:fadeIn .3s ease;}
+.bubble-wrap.ai{flex-direction:row;}
+.bubble-wrap.user{flex-direction:row-reverse;}
+.bubble-avatar{font-size:22px;flex-shrink:0;}
+.bubble{padding:11px 15px;border-radius:18px;font-size:15px;line-height:1.5;max-width:85%;}
+.bubble.ai{background:#ede9fe;color:#3b0764;border-bottom-left-radius:4px;cursor:pointer;}
+.bubble.ai:hover{background:#ddd6fe;}
+.bubble.user{background:linear-gradient(135deg,#7c3aed,#a855f7);color:#fff;border-bottom-right-radius:4px;}
+.typing{display:flex;gap:4px;padding:11px 15px;background:#ede9fe;border-radius:18px;border-bottom-left-radius:4px;}
+.dot{width:8px;height:8px;background:#a855f7;border-radius:50%;animation:bounce .9s infinite;}
+.dot:nth-child(2){animation-delay:.15s;}
+.dot:nth-child(3){animation-delay:.3s;}
+@keyframes bounce{0%,80%,100%{transform:translateY(0);}40%{transform:translateY(-8px);}}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+.reply-area{display:flex;flex-direction:column;gap:8px;}
+.reply-hint{font-size:12px;color:#aaa;margin-bottom:2px;text-align:center;}
+.reply-btn{padding:12px 16px;border-radius:14px;border:2px solid #e0d7f7;background:#faf7ff;cursor:pointer;font-size:14px;font-family:inherit;color:#3b0764;text-align:left;font-weight:500;transition:all .15s;}
+.reply-btn:hover{border-color:#7c3aed;background:#ede9fe;}
+.reward-pop{text-align:center;padding:8px 0;animation:pop .4s ease;}
+@keyframes pop{0%{transform:scale(0);}70%{transform:scale(1.2);}100%{transform:scale(1);}}
+.reward-stars{font-size:26px;letter-spacing:6px;}
+.reward-txt{font-size:13px;color:#7c3aed;font-weight:600;margin-top:2px;}
+.loading-box{text-align:center;padding:40px 16px;}
+.spin{font-size:44px;animation:spin 1s linear infinite;display:inline-block;margin-bottom:14px;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.loading-box p{color:#7c3aed;font-weight:600;font-size:15px;margin-bottom:6px;}
+.loading-box small{color:#aaa;font-size:13px;}
+.error-box{background:#fff1f2;border:2px solid #fca5a5;border-radius:14px;padding:14px;text-align:center;margin-bottom:14px;}
+.error-box p{color:#dc2626;font-size:14px;margin-bottom:6px;}
+.error-box small{color:#888;font-size:12px;}
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0;}
+.stat-card{background:#faf7ff;border-radius:14px;padding:14px;text-align:center;}
+.stat-val{font-size:28px;font-weight:800;color:#7c3aed;}
+.stat-lbl{font-size:12px;color:#888;margin-top:2px;}
+.badge-row{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:10px 0 18px;}
+.badge{background:#fef3c7;border:2px solid #fde68a;border-radius:99px;padding:5px 13px;font-size:13px;font-weight:700;color:#92400e;}
+.big-btn{width:100%;padding:13px;font-size:15px;font-weight:700;border:none;border-radius:16px;cursor:pointer;margin-bottom:8px;}
+.exit-btn{background:none;border:none;font-size:13px;color:#aaa;cursor:pointer;padding:4px 8px;}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+<script type="text/babel">
+const {useState,useEffect,useRef,useCallback}=React;
+
+// ── Audio ─────────────────────────────────────────────────
+let actx=null;
+function getCtx(){
+  if(!actx)actx=new(window.AudioContext||window.webkitAudioContext)();
+  return actx;
+}
+function playTone(freq,dur,type='sine',vol=0.25){
+  try{
+    const c=getCtx(),o=c.createOscillator(),g=c.createGain();
+    o.connect(g);g.connect(c.destination);
+    o.type=type;o.frequency.value=freq;
+    g.gain.setValueAtTime(vol,c.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001,c.currentTime+dur);
+    o.start();o.stop(c.currentTime+dur);
+  }catch(e){}
+}
+function soundSelect(){playTone(440,.08,'sine',.2);}
+function soundCorrect(){[523,659,784].forEach((f,i)=>setTimeout(()=>playTone(f,.15),i*110));}
+function soundWrong(){playTone(300,.2,'sawtooth',.15);}
+function soundComplete(){[523,659,784,1047].forEach((f,i)=>setTimeout(()=>playTone(f,.2),i*120));}
+function soundStart(){[392,523,659].forEach((f,i)=>setTimeout(()=>playTone(f,.18),i*100));}
+function soundTyping(){playTone(880,.05,'square',.04);}
+
+function unlockAudio(){
+  // Unlock Web Audio
+  try{
+    const c=getCtx();
+    if(c.state==='suspended')c.resume();
+    const b=c.createBuffer(1,1,22050),s=c.createBufferSource();
+    s.buffer=b;s.connect(c.destination);s.start(0);
+  }catch(e){console.warn('AudioContext unlock failed:',e);}
+  // Unlock Speech Synthesis — speak a silent utterance first
+  try{
+    window.speechSynthesis.cancel();
+    const u=new SpeechSynthesisUtterance(' ');
+    u.volume=0.01;u.rate=1;u.pitch=1;
+    window.speechSynthesis.speak(u);
+  }catch(e){console.warn('SpeechSynthesis unlock failed:',e);}
+}
+
+function cleanText(t){
+  return(t||'')
+    .replace(/[\u{1F300}-\u{1FFFF}]/gu,'')
+    .replace(/[^\x00-\x7F]/g,'')
+    .trim();
+}
+
+let _voice=null;
+function getVoice(){
+  if(_voice)return _voice;
+  const voices=window.speechSynthesis.getVoices();
+  _voice=voices.find(v=>v.name==='Samantha')
+    ||voices.find(v=>v.name==='Google US English')
+    ||voices.find(v=>v.lang==='en-US'&&v.localService)
+    ||voices.find(v=>v.lang.startsWith('en'))
+    ||voices[0]||null;
+  return _voice;
+}
+
+function speakAndThen(text,rate,pitch,onEnd){
+  try{
+    window.speechSynthesis.cancel();
+    const resumeTimer=setInterval(()=>{
+      if(window.speechSynthesis.paused)window.speechSynthesis.resume();
+    },4000);
+    const u=new SpeechSynthesisUtterance(cleanText(text));
+    const v=getVoice();
+    if(v)u.voice=v;
+    u.lang='en-US';u.rate=rate||0.92;u.pitch=pitch||1.1;u.volume=1;
+    let done=false;
+    const finish=()=>{
+      if(done)return;done=true;
+      clearInterval(resumeTimer);
+      if(onEnd)onEnd();
+    };
+    const fallback=setTimeout(finish,Math.max(text.length*75,2000));
+    u.onend=()=>{clearTimeout(fallback);finish();};
+    u.onerror=()=>{clearTimeout(fallback);finish();};
+    window.speechSynthesis.speak(u);
+  }catch(e){
+    console.warn('speakAndThen error:',e);
+    if(onEnd)setTimeout(onEnd,500);
+  }
+}
+
+function speakOnly(text,rate,pitch){
+  try{
+    window.speechSynthesis.cancel();
+    const u=new SpeechSynthesisUtterance(cleanText(text));
+    const v=getVoice();
+    if(v)u.voice=v;
+    u.lang='en-US';u.rate=rate||1.0;u.pitch=pitch||1.1;u.volume=1;
+    window.speechSynthesis.speak(u);
+  }catch(e){console.warn('speakOnly error:',e);}
+}
+
+// Pre-load voices as soon as page starts
+window.speechSynthesis.getVoices();
+window.speechSynthesis.onvoiceschanged=()=>{
+  _voice=null; // reset so getVoice() re-picks on next call
+  getVoice();
+  console.log('Voices loaded, using:',getVoice()?.name);
+};
+const CHARACTERS=[
+  {id:'zara',name:'Zara',emoji:'🤖',desc:'Friendly Robot'},
+  {id:'finn',name:'Finn',emoji:'🐬',desc:'Ocean Explorer'},
+  {id:'leo', name:'Leo', emoji:'🦁',desc:'Jungle King'},
+];
+const AGE_GROUPS=[
+  {id:'5-6', label:'Ages 5-6', emoji:'🌱',desc:'Simple & fun'},
+  {id:'7-9', label:'Ages 7-9', emoji:'🌟',desc:'Getting clever'},
+  {id:'10-13',label:'Ages 10-13',emoji:'🚀',desc:'Deep thinker'},
+];
+const TOPICS={
+  '5-6':['animals','colours','food','family','toys','weather','feelings','pets','nature','friendship'],
+  '7-9':['space','oceans','dinosaurs','sports','books','music','environment','healthy habits','inventions','animal adaptations'],
+  '10-13':['artificial intelligence','climate change','social media','creativity','space exploration','ocean conservation','mental health','future careers','technology','empathy'],
+};
+
+// ── API call ──────────────────────────────────────────────
+async function generateMission(ageGroup,charName,kidName){
+  const topicList=TOPICS[ageGroup];
+  const topic=topicList[Math.floor(Math.random()*topicList.length)];
+  const ageNote={
+    '5-6':'aged 5 to 6. Use very simple short sentences. Be warm and playful.',
+    '7-9':'aged 7 to 9. Use friendly language with interesting facts.',
+    '10-13':'aged 10 to 13. Use thoughtful language and encourage deeper thinking.',
+  }[ageGroup];
+
+  const prompt=`You are ${charName}, a friendly AI chat pal for children ${ageNote}
+The child is named ${kidName}. Have a fun chat about: ${topic}.
+
+Return ONLY raw JSON. No markdown. No code fences. No extra text before or after.
+Do not use apostrophes or contractions in any string value. Write "do not" not "don't".
+Do not use double quotes inside string values.
+
+JSON format (5 steps, 3 replies each):
+{"title":"short fun title","topic":"${topic}","steps":[{"ai":"message","replies":[{"text":"reply","score":3,"reaction":"reaction"},{"text":"reply","score":2,"reaction":"reaction"},{"text":"reply","score":2,"reaction":"reaction"}]},{"ai":"message","replies":[{"text":"reply","score":3,"reaction":"reaction"},{"text":"reply","score":2,"reaction":"reaction"},{"text":"reply","score":2,"reaction":"reaction"}]},{"ai":"message","replies":[{"text":"reply","score":3,"reaction":"reaction"},{"text":"reply","score":2,"reaction":"reaction"},{"text":"reply","score":2,"reaction":"reaction"}]},{"ai":"message","replies":[{"text":"reply","score":3,"reaction":"reaction"},{"text":"reply","score":2,"reaction":"reaction"},{"text":"reply","score":2,"reaction":"reaction"}]},{"ai":"message","replies":[{"text":"reply","score":3,"reaction":"reaction"},{"text":"reply","score":2,"reaction":"reaction"},{"text":"reply","score":2,"reaction":"reaction"}]}]}`;
+
+  const res=await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      model:'claude-sonnet-4-20250514',
+      max_tokens:1600,
+      messages:[{role:'user',content:prompt}],
+    })
+  });
+
+  if(!res.ok){
+    const t=await res.text();
+    throw new Error('API '+res.status+': '+t.slice(0,120));
+  }
+
+  const data=await res.json();
+  const raw=(data.content||[]).find(b=>b.type==='text')?.text||'';
+  console.log('Raw API response:',raw.slice(0,300));
+
+  // Extract JSON
+  let cleaned=raw.trim();
+  cleaned=cleaned.replace(/^```(?:json)?/i,'').replace(/```$/,'').trim();
+  const s=cleaned.indexOf('{');
+  const e=cleaned.lastIndexOf('}');
+  if(s<0||e<0)throw new Error('No JSON object found in response');
+  cleaned=cleaned.slice(s,e+1);
+  // Remove control chars except tab/newline
+  cleaned=cleaned.replace(/[\x00-\x08\x0b\x0c\x0e-\x1f]/g,'');
+
+  let parsed;
+  try{parsed=JSON.parse(cleaned);}
+  catch(err){
+    console.error('JSON error:',err.message);
+    console.error('Cleaned JSON (first 600):',cleaned.slice(0,600));
+    throw new Error('JSON parse failed: '+err.message);
+  }
+
+  if(!parsed||!Array.isArray(parsed.steps)||parsed.steps.length<3)
+    throw new Error('Mission missing steps array');
+
+  return parsed;
+}
+
+// ── App ───────────────────────────────────────────────────
+function App(){
+  const [phase,setPhase]=useState('start');
+  const [nameInput,setNameInput]=useState('');
+  const [kidName,setKidName]=useState('');
+  const [ageGroup,setAgeGroup]=useState('');
+  const [charId,setCharId]=useState('');
+  const [mission,setMission]=useState(null);
+  const [errMsg,setErrMsg]=useState('');
+  const [stepIdx,setStepIdx]=useState(0);
+  const [chatLog,setChatLog]=useState([]);
+  const [showReplies,setShowReplies]=useState(false);
+  const [typing,setTyping]=useState(false);
+  const [locked,setLocked]=useState(false);
+  const [score,setScore]=useState(0);
+  const [showReward,setShowReward]=useState(false);
+  const [rewardStars,setRewardStars]=useState('');
+  const chatEndRef=useRef(null);
+  const missionRef=useRef(null);
+  const stepRef=useRef(0);
+
+  const char=CHARACTERS.find(c=>c.id===charId)||CHARACTERS[0];
+
+  useEffect(()=>{
+    if(chatEndRef.current)chatEndRef.current.scrollIntoView({behavior:'smooth'});
+  },[chatLog,typing,showReplies]);
+
+  // Show one AI message then reveal replies
+  const showAiMessage=useCallback((m,idx)=>{
+    console.log('showAiMessage called, idx:',idx,'steps:',m?.steps?.length);
+    if(!m||!m.steps||idx>=m.steps.length){console.error('Bad mission or idx');return;}
+    const txt=m.steps[idx].ai;
+    setTyping(true);soundTyping();
+    const delay=Math.min(800+txt.length*12,2000);
+    setTimeout(()=>{
+      setTyping(false);
+      setChatLog(l=>[...l,{role:'ai',text:txt}]);
+      speakAndThen(txt,0.95,1.15,()=>{
+        setShowReplies(true);
+        // read replies aloud one by one
+        m.steps[idx].replies.forEach((r,i)=>{
+          setTimeout(()=>speakOnly(r.text,1.0,1.1),i*1700+200);
+        });
+      });
+    },delay);
+  },[]);
+
+  const startGame=async()=>{
+    if(!ageGroup||!charId){alert('Please pick an age group and a Chat Pal!');return;}
+    unlockAudio();soundStart();
+    const name=nameInput.trim()||'Friend';
+    setKidName(name);
+    setErrMsg('');
+    setPhase('loading');
+    try{
+      const m=await generateMission(ageGroup,char.name,name);
+      console.log('Mission loaded:',m.title,'steps:',m.steps.length);
+      missionRef.current=m;
+      stepRef.current=0;
+      setMission(m);
+      setStepIdx(0);setScore(0);
+      setChatLog([]);setShowReplies(false);setLocked(false);
+      setPhase('chat');
+      // wait for render then start
+      setTimeout(()=>{
+        speakAndThen(
+          'Hi '+name+'! I am '+char.name+'! Let us chat about '+m.topic+'!',
+          0.95,1.15,
+          ()=>showAiMessage(m,0)
+        );
+      },500);
+    }catch(e){
+      console.error('Mission error:',e);
+      setErrMsg(e.message||'Something went wrong');
+      setPhase('start');
+    }
+  };
+
+  const pickReply=(reply)=>{
+    if(locked)return;
+    setLocked(true);setShowReplies(false);
+    soundSelect();
+    const m=missionRef.current;
+    const idx=stepRef.current;
+    setChatLog(l=>[...l,{role:'user',text:reply.text}]);
+    setScore(s=>s+reply.score);
+    const stars=reply.score>=3?'⭐⭐⭐':'⭐⭐';
+    setRewardStars(stars);setShowReward(true);
+    if(reply.score>=3)soundCorrect();else soundWrong();
+    setTimeout(()=>setShowReward(false),1400);
+
+    // show reaction
+    setTimeout(()=>{
+      setTyping(true);soundTyping();
+      const reaction=reply.reaction;
+      setTimeout(()=>{
+        setTyping(false);
+        setChatLog(l=>[...l,{role:'ai',text:reaction}]);
+        const nextIdx=idx+1;
+        if(nextIdx<m.steps.length){
+          stepRef.current=nextIdx;
+          setStepIdx(nextIdx);
+          speakAndThen(reaction,0.95,1.15,()=>{
+            setLocked(false);
+            showAiMessage(m,nextIdx);
+          });
+        } else {
+          speakAndThen(reaction,0.95,1.15,()=>{
+            setTimeout(()=>{soundComplete();setPhase('result');},500);
+          });
+        }
+      },Math.min(500+reaction.length*12,2000));
+    },400);
+  };
+
+  const exitGame=()=>{
+    window.speechSynthesis.cancel();
+    setPhase('start');setAgeGroup('');setCharId('');setNameInput('');setMission(null);
+  };
+
+  const playAgain=async()=>{
+    unlockAudio();soundStart();
+    setErrMsg('');setPhase('loading');
+    try{
+      const m=await generateMission(ageGroup,char.name,kidName);
+      missionRef.current=m;stepRef.current=0;
+      setMission(m);setStepIdx(0);setScore(0);
+      setChatLog([]);setShowReplies(false);setLocked(false);
+      setPhase('chat');
+      setTimeout(()=>{
+        speakAndThen(
+          'Welcome back '+kidName+'! Now let us chat about '+m.topic+'!',
+          0.95,1.15,
+          ()=>showAiMessage(m,0)
+        );
+      },500);
+    }catch(e){
+      setErrMsg(e.message||'Something went wrong');
+      setPhase('result');
+    }
+  };
+
+  // ── Loading ──
+  if(phase==='loading') return(
+    <div className="screen">
+      <div className="loading-box">
+        <div className="spin">🧠</div>
+        <p>{char.emoji} {char.name} is thinking...</p>
+        <small>Creating a fresh mission for {kidName||'you'}!</small>
+      </div>
+    </div>
+  );
+
+  // ── Start ──
+  if(phase==='start') return(
+    <div className="screen">
+      <div className="title">
+        <div className="stars">⭐🌟✨</div>
+        <h1>Chat Pals</h1>
+        <p>Chat with your AI friend and learn!</p>
+      </div>
+      {errMsg&&(
+        <div className="error-box">
+          <p>Oops! {errMsg}</p>
+          <small>Check internet connection and try again.</small>
+        </div>
+      )}
+      <div className="section-label">Your name</div>
+      <input className="name-input" value={nameInput}
+        onChange={e=>setNameInput(e.target.value)}
+        onKeyDown={e=>e.key==='Enter'&&startGame()}
+        placeholder="Enter your name..."/>
+      <div className="section-label">Age group</div>
+      <div className="age-grid">
+        {AGE_GROUPS.map(g=>(
+          <button key={g.id} className={`age-btn${ageGroup===g.id?' sel':''}`}
+            onClick={()=>{unlockAudio();setAgeGroup(g.id);soundSelect();}}>
+            <span className="emoji">{g.emoji}</span>
+            <span className="lbl">{g.label}</span>
+            <span className="sub">{g.desc}</span>
+          </button>
+        ))}
+      </div>
+      <div className="section-label">Choose your Chat Pal</div>
+      <div className="char-grid">
+        {CHARACTERS.map(c=>(
+          <button key={c.id} className={`char-btn${charId===c.id?' sel':''}`}
+            onClick={()=>{unlockAudio();setCharId(c.id);soundSelect();}}>
+            <span className="face">{c.emoji}</span>
+            <span className="cname">{c.name}</span>
+            <span className="cdesc">{c.desc}</span>
+          </button>
+        ))}
+      </div>
+      <button className="start-btn" onClick={startGame}
+        style={{background:ageGroup&&charId?'linear-gradient(135deg,#7c3aed,#a855f7)':'#ccc',
+                cursor:ageGroup&&charId?'pointer':'not-allowed'}}>
+        {ageGroup&&charId?'Start Chatting! 💬':'Pick age group and pal first'}
+      </button>
+    </div>
+  );
+
+  // ── Chat ──
+  if(phase==='chat'&&mission) return(
+    <div className="screen">
+      <div className="chat-header">
+        <div style={{display:'flex',alignItems:'center',gap:10}}>
+          <div className="char-face-sm">{char.emoji}</div>
+          <div>
+            <div className="char-name">{char.name}</div>
+            <div className="mission-lbl">{mission.title}</div>
+          </div>
+        </div>
+        <div style={{display:'flex',gap:8,alignItems:'center'}}>
+          <span style={{fontSize:13,fontWeight:700,color:'#7c3aed'}}>⭐{score}</span>
+          <button className="exit-btn" onClick={exitGame}>✕ Exit</button>
+        </div>
+      </div>
+      <div className="progress-bar">
+        <div className="progress-fill" style={{width:`${(stepIdx/mission.steps.length)*100}%`}}/>
+      </div>
+      <div className="chat-area">
+        {chatLog.map((msg,i)=>(
+          <div key={i} className={`bubble-wrap ${msg.role}`}>
+            {msg.role==='ai'&&<span className="bubble-avatar">{char.emoji}</span>}
+            <div className={`bubble ${msg.role}`}
+              onMouseEnter={()=>msg.role==='ai'&&speakOnly(msg.text)}
+              onTouchStart={()=>msg.role==='ai'&&speakOnly(msg.text)}
+              title={msg.role==='ai'?'Hover to hear again':''}>
+              {msg.text}
+            </div>
+            {msg.role==='user'&&<span className="bubble-avatar">🧒</span>}
+          </div>
+        ))}
+        {typing&&(
+          <div className="bubble-wrap ai">
+            <span className="bubble-avatar">{char.emoji}</span>
+            <div className="typing"><div className="dot"/><div className="dot"/><div className="dot"/></div>
+          </div>
+        )}
+        {showReward&&(
+          <div className="reward-pop">
+            <div className="reward-stars">{rewardStars}</div>
+            <div className="reward-txt">{rewardStars==='⭐⭐⭐'?'Amazing!':'Good job!'}</div>
+          </div>
+        )}
+        <div ref={chatEndRef}/>
+      </div>
+      {showReplies&&mission.steps[stepIdx]&&(
+        <div className="reply-area">
+          <div className="reply-hint">Tap your reply 👇</div>
+          {mission.steps[stepIdx].replies.map((r,i)=>(
+            <button key={i} className="reply-btn"
+              onClick={()=>pickReply(r)}
+              onMouseEnter={()=>speakOnly(r.text,1.0,1.1)}
+              onTouchStart={()=>speakOnly(r.text,1.0,1.1)}>
+              {r.text}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
+  // ── Result ──
+  if(phase==='result'&&mission){
+    const max=mission.steps.length*3;
+    const pct=Math.round((score/max)*100);
+    const verdict=pct>=90?'Amazing Communicator! 🏆':pct>=70?'Super Chat Pal! 🌟':pct>=50?'Good Effort! 👍':'Keep Chatting! 💪';
+    return(
+      <div className="screen" style={{textAlign:'center'}}>
+        <div style={{fontSize:60,marginBottom:8}}>{char.emoji}</div>
+        <div style={{fontSize:21,fontWeight:800,color:'#5b21b6',marginBottom:4}}>{kidName}, {verdict}</div>
+        <div style={{fontSize:13,color:'#888',marginBottom:4}}>Topic: {mission.topic}</div>
+        <div className="stat-grid">
+          <div className="stat-card"><div className="stat-val">{score}</div><div className="stat-lbl">Stars</div></div>
+          <div className="stat-card"><div className="stat-val">{pct}%</div><div className="stat-lbl">Score</div></div>
+        </div>
+        <div className="badge-row">
+          {pct>=90&&<span className="badge">🏆 Perfect Chatter</span>}
+          {pct>=70&&<span className="badge">💬 Great Communicator</span>}
+          <span className="badge">🌟 Curious Mind</span>
+          <span className="badge">💙 Kind Friend</span>
+        </div>
+        {errMsg&&<div className="error-box"><p>{errMsg}</p></div>}
+        <button className="big-btn" onClick={playAgain}
+          style={{background:'linear-gradient(135deg,#7c3aed,#a855f7)',color:'#fff'}}>
+          New Mission! 🎲
+        </button>
+        <button className="big-btn" onClick={exitGame}
+          style={{background:'#ede9fe',color:'#5b21b6'}}>
+          Change Settings 🔧
+        </button>
+      </div>
+    );
+  }
+  return null;
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
